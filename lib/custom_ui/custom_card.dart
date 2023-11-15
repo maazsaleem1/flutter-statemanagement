@@ -5,8 +5,9 @@ import 'package:flutter_learning/view/indivdual_page.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 class CustomCard extends StatefulWidget {
-  CustomCard({super.key, required this.chatmodel});
-  final ChatModel chatmodel;
+  CustomCard({super.key, required this.name, required this.id, });
+  final String name;
+  final String id;
 
   @override
   State<CustomCard> createState() => _CustomCardState();
@@ -15,15 +16,16 @@ class CustomCard extends StatefulWidget {
 class _CustomCardState extends State<CustomCard> {
   @override
   Widget build(BuildContext context) {
+    
     return InkWell(
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-              builder: (context) => IndivdualScreen(
-                    chatmodel: widget.chatmodel,
-                  )),
-        );
+        // Navigator.push(
+        //   context,
+        //   MaterialPageRoute(
+        //       // builder: (context) => IndivdualScreen(
+        //       //       // chatmodel: widget.chatmodel,
+        //       //     )),
+        // );
       },
       child: Column(
         children: [
@@ -32,29 +34,30 @@ class _CustomCardState extends State<CustomCard> {
               radius: 25,
               // ignore: sort_child_properties_last
               child: SvgPicture.asset(
-                widget.chatmodel.isGroup
-                    ? "assets/groups.svg"
-                    : "assets/person.svg",
+                // widget.chatmodel.isGroup
+                //     ? "assets/groups.svg"
+                //     : 
+                    "assets/person.svg",
                 color: Colors.white,
                 height: 38,
                 width: 38,
               ),
               backgroundColor: Colors.grey,
             ),
-            title: Text(widget.chatmodel.name),
-            subtitle: Row(
+            title: Text(widget.name),
+            subtitle: const Row(
               children: [
                 Icon(Icons.done_all),
                 SizedBox(
                   width: 5,
                 ),
                 Text(
-                  widget.chatmodel.currentMessage,
+                  "heloo",
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
-            trailing: Text(widget.chatmodel.time),
+            trailing: Text("10.00"),
           ),
           const Divider(
             thickness: 1,
