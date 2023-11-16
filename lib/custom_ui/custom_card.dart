@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:get/get_rx/src/rx_typedefs/rx_typedefs.dart';
 
 class CustomCard extends StatelessWidget {
   const CustomCard({

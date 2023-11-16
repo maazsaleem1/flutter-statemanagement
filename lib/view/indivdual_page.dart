@@ -1,12 +1,7 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_learning/auth_service/service.dart';
-import 'package:flutter_learning/model.dart/chat_model.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:flutter_svg/svg.dart';
-import 'package:get/get.dart';
 
 class IndivdualScreen extends StatefulWidget {
   const IndivdualScreen({
