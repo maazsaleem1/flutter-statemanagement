@@ -5,6 +5,8 @@ import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 
+var roomid = "";
+
 class AuthService {
   Future<void> LoginApi(context, data) async {
     showDialog(
@@ -25,7 +27,9 @@ class AuthService {
       );
       var res_data = json.decode(response.body);
       if (res_data['status'] == true) {
-        Get.to(() => const ChatScreen());
+        Get.to(() => ChatScreen(
+              senderid: res_data["data"]["authData"]["_id"],
+            ));
       } else {
         Get.snackbar("Error", res_data['message'],
             colorText: Colors.black, backgroundColor: Colors.white);
@@ -48,6 +52,36 @@ class AuthService {
       return allUserResponse!;
     } else {
       return null;
+    }
+  }
+
+  Future<void> callRoomApi(context, data) async {
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        });
+    final uri =
+        Uri.parse("https://chatsocket.thesuitchstaging.com:3050/api/v1/room");
+    String jsonbody = json.encode(data);
+    try {
+      final response = await http.post(uri,
+          headers: {'Content-Type': 'application/json'}, body: jsonbody);
+      var res_data = json.decode(response.body);
+      if (res_data['status'] == true) {
+        Get.back();
+        roomid = res_data["data"]["_id"];
+        print("roomm id==================${res_data["data"]["_id"]}");
+        print("data =================================> ${res_data["data"]}");
+        print("Success ${res_data["message"]}");
+      } else {
+        Get.back();
+        Get.snackbar("Error", res_data["message"]);
+      }
+    } catch (e) {
+      Get.snackbar("Error", e.toString(), colorText: Colors.white);
     }
   }
 }

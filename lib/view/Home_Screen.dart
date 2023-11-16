@@ -65,7 +65,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ),
       body: TabBarView(controller: _controller, children: const [
         Text("camera"),
-        ChatScreen(),
+        ChatScreen(
+          senderid: '',
+        ),
         Text("status"),
         Text("calls")
       ]),

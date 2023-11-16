@@ -3,47 +3,29 @@ import 'package:flutter_learning/auth_service/service.dart';
 import 'package:flutter_learning/custom_ui/custom_card.dart';
 import 'package:flutter_learning/model.dart/all_user_data_model/all_user_data_model.dart';
 import 'package:flutter_learning/model.dart/chat_model.dart';
+import 'package:flutter_learning/view/indivdual_page.dart';
+import 'package:get/get.dart';
 
 class ChatScreen extends StatefulWidget {
-  const ChatScreen({super.key});
-
+  const ChatScreen({super.key, required this.senderid});
+  final String senderid;
   @override
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  List<ChatModel> chatModelList = [
-    // ChatModel(
-    //     name: "Almas",
-    //     isGroup: false,
-    //     currentMessage: "Hello",
-    //     time: "10:00",
-    //     icon: "person.svg"),
-    // ChatModel(
-    //     name: "Ahmed",
-    //     isGroup: true,
-    //     currentMessage: "Hello",
-    //     time: "10:00",
-    //     icon: "group.svg"),
-    // ChatModel(
-    //     name: "ward",
-    //     isGroup: false,
-    //     currentMessage: "Hello",
-    //     time: "10:00",
-    //     icon: "person.svg"),
-    // ChatModel(
-    //     name: "bilal",
-    //     isGroup: true,
-    //     currentMessage: "Hello",
-    //     time: "10:00",
-    //     icon: "group.svg"),
-  ];
+  List<ChatModel> chatModelList = [];
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        appBar: AppBar(
+          
+          // centerTitle: true,
+          // title: Text("Whatsapp Clone"),
+        ),
         floatingActionButton: FloatingActionButton(
           onPressed: () {},
-          child: Icon(Icons.chat),
+          child: const Icon(Icons.chat),
         ),
         body: Column(
           children: [
@@ -58,17 +40,28 @@ class _ChatScreenState extends State<ChatScreen> {
                     } else {
                       return ListView.builder(
                           itemCount: snapshot.data?.data?.length,
-                          itemBuilder: ((context, index) =>
-                              //  Container(
-                              //       margin: EdgeInsets.only(bottom: 10),
-                              //       height: 100,
-                              //       width: 100,
-                              //       color: Colors.amber,
-                              //     ))
-                              CustomCard(
-                                  name: snapshot.data?.data?[index].username ??
-                                      '',
-                                  id: snapshot.data?.data?[index].id ?? '')));
+                          itemBuilder: ((context, index) => GestureDetector(
+                                onTap: () {
+                                  Get.to(() => IndivdualScreen(
+                                        name: snapshot
+                                                .data?.data?[index].username ??
+                                            "",
+                                        senderid: widget.senderid,
+                                        id: snapshot.data?.data?[index].id ??
+                                            "",
+                                      ));
+                                  print(
+                                      "idddd ===============> ${snapshot.data?.data?[index].userRooms.toString() ?? ""}");
+                                  print(
+                                      "senderIddd ===============> ${widget.senderid}");
+                                },
+                                child: CustomCard(
+                                    senderid: widget.senderid,
+                                    name:
+                                        snapshot.data?.data?[index].username ??
+                                            '',
+                                    id: snapshot.data?.data?[index].id ?? ''),
+                              )));
                     }
                   }),
             )

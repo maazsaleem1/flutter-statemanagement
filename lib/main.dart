@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_learning/view/Home_Screen.dart';
 import 'package:flutter_learning/view/user_login.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/get_core.dart';
 
 void main() {
   runApp(const MyApp());
@@ -18,8 +16,9 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
           // primaryColor: Color(0xFF075E54),
           colorScheme: ColorScheme.fromSwatch(
-              primarySwatch: Colors.teal, accentColor: Color(0XFF128C7E))),
-      home: LoginPage(),
+              primarySwatch: Colors.teal,
+              accentColor: const Color(0XFF128C7E))),
+      home: const LoginPage(),
     );
   }
 }
