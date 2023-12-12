@@ -78,7 +78,7 @@ class AuthService {
         print("roomm id==================${res_data["data"]["_id"]}");
         print("data =================================> ${res_data["data"]}");
         print("Success ${res_data["message"]}");
-        Get.snackbar("Success", res_data["message"]);
+        // Get.snackbar("Success", res_data["message"]);
       } else {
         Get.back();
         Get.snackbar("Error", res_data["message"]);

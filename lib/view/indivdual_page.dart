@@ -9,6 +9,7 @@ import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:flutter_svg/svg.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:video_player/video_player.dart';
+import 'package:intl/intl.dart';
 
 class IndivdualScreen extends StatefulWidget {
   const IndivdualScreen({
@@ -25,11 +26,11 @@ class IndivdualScreen extends StatefulWidget {
 }
 
 class _IndivdualScreenState extends State<IndivdualScreen> {
+  String isTyping = "";
   File? _pickedPDF;
-
+  FocusNode focusNode = FocusNode();
   final List<Map<String, dynamic>> _messages = [];
   List<dynamic> selectedVideos = [];
-  String isTyping = "";
   String? thumbnailPath;
   ScrollController _scrollController = ScrollController();
   final textFieldController = TextEditingController();
@@ -52,7 +53,13 @@ class _IndivdualScreenState extends State<IndivdualScreen> {
   }
 
   void _emitTypingEvent() {
+    print("heheh1 $roomid ${widget.senderid}");
     socket.emit("typing", {"roomId": roomid, "typer": widget.senderid});
+  }
+
+  void _stopTypingEvent() {
+    print("nottyping $roomid");
+    socket.emit("nottyping", {"roomId": roomid});
   }
 
   Future<void> getData() async {
@@ -74,9 +81,25 @@ class _IndivdualScreenState extends State<IndivdualScreen> {
       print('Connection established');
     });
     socket.on("user_typing", (data) {
-      // print("typing data ===========> $data");
+      print("heheh data ===========> $isTyping");
+
+      if (data != widget.senderid) {
+        setState(() {
+          isTyping = data;
+        });
+      }
+      // else {
+      //   setState(() {
+      //     isTyping = data;
+      //   });
+      // }
+    });
+
+    socket.on("stop_typing", (data) {
+      print("stop_typing ===========>   $isTyping");
+
       setState(() {
-        isTyping = data;
+        isTyping = "";
       });
     });
   }
@@ -88,9 +111,10 @@ class _IndivdualScreenState extends State<IndivdualScreen> {
 
   @override
   void dispose() {
+    socket.clearListeners();
     socket.disconnect();
     socket.dispose();
-    textFieldController.removeListener(_emitTypingEvent);
+
     super.dispose();
   }
 
@@ -270,16 +294,15 @@ class _IndivdualScreenState extends State<IndivdualScreen> {
               widget.name,
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
-            Text(
-                isTyping == widget.senderid || isTyping == ""
-                    ? "last seen today at 10.00..."
-                    : "Typing",
+            Text(isTyping == "" ? "last seen today at 10.00..." : "Typing",
                 style: const TextStyle(fontSize: 13))
           ],
         ),
         actions: [
           GestureDetector(
-            onTap: () {},
+            onTap: () {
+              print("hehehhehehhehe $isTyping");
+            },
             child: const Icon(
               Icons.video_call,
               size: 30,
@@ -302,18 +325,21 @@ class _IndivdualScreenState extends State<IndivdualScreen> {
             child: Padding(
               padding: const EdgeInsets.only(bottom: 5),
               child: Card(
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20)),
-                  child: FocusScope(
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20)),
+                child: FocusScope(
+                  child: Focus(
+                    focusNode: focusNode,
                     onFocusChange: (value) {
                       if (value) {
+                        print("heheh 1234 $value");
                         _emitTypingEvent();
-                        setState(() {});
                       } else {
-                        setState(() {
-                          isTyping = "";
-                        });
+                        print("heheh 1234 $value");
+                        _stopTypingEvent();
                       }
+
+                      // setState(() {});
                     },
                     child: TextFormField(
                       keyboardType: TextInputType.multiline,
@@ -369,7 +395,9 @@ class _IndivdualScreenState extends State<IndivdualScreen> {
                             ),
                           )),
                     ),
-                  )),
+                  ),
+                ),
+              ),
             ),
           ),
           CircleAvatar(
@@ -383,7 +411,7 @@ class _IndivdualScreenState extends State<IndivdualScreen> {
                       curve: Curves.easeOut);
                   await _sendImageMessage();
                   await _sendVideo();
-                  await sendPdf();
+                  // await sendPdf();
                   textFieldController.clear();
 
                   // }
@@ -408,6 +436,9 @@ class _IndivdualScreenState extends State<IndivdualScreen> {
         child: SingleChildScrollView(
           controller: _scrollController,
           child: Column(
+            // mainAxisAlignment: MainAxisAlignment.start,
+            // crossAxisAlignment: CrossAxisAlignment.start,
+
             children: [
               ListView.builder(
                 shrinkWrap: true,
@@ -423,250 +454,316 @@ class _IndivdualScreenState extends State<IndivdualScreen> {
                       Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: SizedBox(
-                          width: 230,
-                          child: GestureDetector(
-                            onLongPress: () {
-                              message["sender"] == widget.senderid
-                                  ? showDialog(
-                                      context: context,
-                                      builder: (BuildContext context) {
-                                        return AlertDialog(
-                                          content: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceAround,
-                                            children: [
-                                              GestureDetector(
-                                                onTap: () {
-                                                  print({
-                                                    "messageId": message["_id"],
-                                                    "room": message["room"]
-                                                  });
-                                                  socket.emit("delete_msg", {
-                                                    "messageId": message["_id"],
-                                                    "room": message["room"]
-                                                  });
-                                                  setState(() {});
-                                                  Get.back();
-                                                },
-                                                child: Container(
-                                                  // delete container
-                                                  width: 100,
-                                                  height: 40,
-                                                  decoration: BoxDecoration(
-                                                      border: Border.all(
-                                                          color: Colors.black),
-                                                      color: Colors.red,
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              20)),
-                                                  child: const Center(
-                                                    child: Text(
-                                                      "delete",
-                                                      style: TextStyle(
-                                                          color: Colors.white),
+                            width: 230,
+                            child: GestureDetector(
+                              onLongPress: () {
+                                message["sender"] == widget.senderid
+                                    ? showDialog(
+                                        context: context,
+                                        builder: (BuildContext context) {
+                                          return AlertDialog(
+                                            content: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.spaceAround,
+                                              children: [
+                                                GestureDetector(
+                                                  onTap: () {
+                                                    socket.emit("delete_msg", {
+                                                      "messageId":
+                                                          message["_id"],
+                                                      "room": message["room"]
+                                                    });
+                                                    setState(() {});
+                                                    Get.back();
+                                                  },
+                                                  child: Container(
+                                                    // delete container
+                                                    width: 100,
+                                                    height: 40,
+                                                    decoration: BoxDecoration(
+                                                        border: Border.all(
+                                                            color:
+                                                                Colors.black),
+                                                        color: Colors.red,
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(20)),
+                                                    child: const Center(
+                                                      child: Text(
+                                                        "delete",
+                                                        style: TextStyle(
+                                                            color:
+                                                                Colors.white),
+                                                      ),
                                                     ),
                                                   ),
                                                 ),
-                                              ),
-                                              GestureDetector(
-                                                onTap: () {
-                                                  editTextField.text =
-                                                      message["text"];
-                                                  showDialog(
-                                                    context: context,
-                                                    builder:
-                                                        (BuildContext context) {
-                                                      return AlertDialog(
-                                                        content: Container(
-                                                          decoration: BoxDecoration(
-                                                              borderRadius:
-                                                                  BorderRadius
-                                                                      .circular(
-                                                                          80)),
-                                                          height: 150,
-                                                          child: Column(
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .spaceEvenly,
-                                                            children: [
-                                                              const Text(
-                                                                  "Edit your message"),
-                                                              SizedBox(
-                                                                height: 40,
-                                                                child:
-                                                                    TextFormField(
-                                                                  controller:
-                                                                      editTextField,
-                                                                  decoration: InputDecoration(
-                                                                      border: OutlineInputBorder(
-                                                                          borderRadius:
-                                                                              BorderRadius.circular(20))),
-                                                                ),
-                                                              ),
-                                                              GestureDetector(
-                                                                onTap: () {
-                                                                  setState(() {
-                                                                    message["sender"] ==
-                                                                            widget
-                                                                                .senderid
-                                                                        ? socket.emit(
-                                                                            "edit_msg",
-                                                                            {
-                                                                                "messageId": message["_id"],
-                                                                                "room": message["room"],
-                                                                                "txt": editTextField.text,
-                                                                              })
-                                                                        : null;
-                                                                  });
-                                                                  Get.back();
-                                                                  Get.back();
-                                                                },
-                                                                child:
-                                                                    // this is the container of the delete and edit one
-                                                                    Container(
-                                                                  width: 100,
+                                                GestureDetector(
+                                                  onTap: () {
+                                                    editTextField.text =
+                                                        message["text"];
+                                                    showDialog(
+                                                      context: context,
+                                                      builder: (BuildContext
+                                                          context) {
+                                                        return AlertDialog(
+                                                          content: Container(
+                                                            decoration: BoxDecoration(
+                                                                borderRadius:
+                                                                    BorderRadius
+                                                                        .circular(
+                                                                            80)),
+                                                            height: 150,
+                                                            child: Column(
+                                                              mainAxisAlignment:
+                                                                  MainAxisAlignment
+                                                                      .spaceEvenly,
+                                                              children: [
+                                                                const Text(
+                                                                    "Edit your message"),
+                                                                SizedBox(
                                                                   height: 40,
-                                                                  decoration: BoxDecoration(
-                                                                      border: Border.all(
-                                                                          color: Colors
-                                                                              .black),
-                                                                      color: Colors
-                                                                          .blue,
-                                                                      borderRadius:
-                                                                          BorderRadius.circular(
-                                                                              20)),
                                                                   child:
-                                                                      const Center(
-                                                                    child: Text(
-                                                                      "done",
-                                                                      style: TextStyle(
-                                                                          color:
-                                                                              Colors.white),
+                                                                      TextFormField(
+                                                                    controller:
+                                                                        editTextField,
+                                                                    decoration:
+                                                                        InputDecoration(
+                                                                            border:
+                                                                                OutlineInputBorder(borderRadius: BorderRadius.circular(20))),
+                                                                  ),
+                                                                ),
+                                                                GestureDetector(
+                                                                  onTap: () {
+                                                                    setState(
+                                                                        () {
+                                                                      message["sender"] ==
+                                                                              widget.senderid
+                                                                          ? socket.emit("edit_msg", {
+                                                                              "messageId": message["_id"],
+                                                                              "room": message["room"],
+                                                                              "txt": editTextField.text,
+                                                                            })
+                                                                          : null;
+                                                                    });
+                                                                    Get.back();
+                                                                    Get.back();
+                                                                  },
+                                                                  child:
+                                                                      // this is the container of the delete and edit one
+                                                                      Container(
+                                                                    width: 100,
+                                                                    height: 40,
+                                                                    decoration: BoxDecoration(
+                                                                        border: Border.all(
+                                                                            color: Colors
+                                                                                .black),
+                                                                        color: Colors
+                                                                            .blue,
+                                                                        borderRadius:
+                                                                            BorderRadius.circular(20)),
+                                                                    child:
+                                                                        const Center(
+                                                                      child:
+                                                                          Text(
+                                                                        "done",
+                                                                        style: TextStyle(
+                                                                            color:
+                                                                                Colors.white),
+                                                                      ),
                                                                     ),
                                                                   ),
                                                                 ),
-                                                              ),
-                                                            ],
+                                                              ],
+                                                            ),
                                                           ),
-                                                        ),
-                                                      );
-                                                    },
-                                                  );
-                                                },
-                                                child: Container(
-                                                  width: 100,
-                                                  height: 40,
-                                                  decoration: BoxDecoration(
-                                                      border: Border.all(
-                                                          color: Colors.black),
-                                                      color: Colors.green,
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              20)),
-                                                  child: const Center(
-                                                    child: Text(
-                                                      "edit",
-                                                      style: TextStyle(
-                                                          color: Colors.white),
+                                                        );
+                                                      },
+                                                    );
+                                                  },
+                                                  child: Container(
+                                                    width: 100,
+                                                    height: 40,
+                                                    decoration: BoxDecoration(
+                                                        border: Border.all(
+                                                            color:
+                                                                Colors.black),
+                                                        color: Colors.green,
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(20)),
+                                                    child: const Center(
+                                                      child: Text(
+                                                        "edit",
+                                                        style: TextStyle(
+                                                            color:
+                                                                Colors.white),
+                                                      ),
                                                     ),
                                                   ),
                                                 ),
-                                              ),
-                                            ],
-                                          ),
-                                        );
-                                      })
-                                  : null;
-                            },
-                            child: message["isDeleted"] == false
-                                ? Card(
-                                    color: message["sender"] == widget.senderid
-                                        ? const Color(0xffdcf8c6)
-                                        : const Color.fromARGB(255, 65, 60, 60),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: message["sender"] ==
-                                              widget.senderid
-                                          ? const BorderRadius.only(
-                                              topLeft: Radius.circular(20),
-                                              bottomLeft: Radius.circular(20),
-                                              bottomRight: Radius.circular(20),
-                                            )
-                                          : const BorderRadius.only(
-                                              topRight: Radius.circular(20),
-                                              bottomLeft: Radius.circular(20),
-                                              bottomRight: Radius.circular(20),
+                                              ],
                                             ),
-                                    ),
-                                    // margin: const EdgeInsets.only(right: 100, left: 10),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(10),
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Text(
-                                            message["text"],
+                                          );
+                                        })
+                                    : null;
+                              },
+                              child: message["isDeleted"] == false
+                                  ? Align(
+                                      alignment:
+                                          message["sender"] == widget.senderid
+                                              ? Alignment.centerRight
+                                              : Alignment.centerLeft,
+                                      child: ConstrainedBox(
+                                          constraints: BoxConstraints(
+                                            maxWidth: MediaQuery.of(context)
+                                                    .size
+                                                    .width -
+                                                45,
                                           ),
-                                          if (message["attachment"] != null &&
-                                              message["attachment"]
-                                                      ["fileType"] ==
-                                                  "jpg")
-                                            Container(
-                                              height: 250,
-                                              width: 250,
-                                              child: Image(
-                                                image: NetworkImage(
-                                                  // thumbnailPath.toString(),
-                                                  "https://chatsocket.thesuitchstaging.com/sio/Uploads/${message["attachment"]["fileName"]}",
+                                          child: Card(
+                                            elevation: 5,
+                                            color: message["sender"] ==
+                                                    widget.senderid
+                                                ? const Color(0xffdcf8c6)
+                                                : Colors.grey.shade300,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: message["sender"] ==
+                                                      widget.senderid
+                                                  ? const BorderRadius.only(
+                                                      topLeft:
+                                                          Radius.circular(20),
+                                                      bottomLeft:
+                                                          Radius.circular(20),
+                                                      bottomRight:
+                                                          Radius.circular(20),
+                                                    )
+                                                  : const BorderRadius.only(
+                                                      topRight:
+                                                          Radius.circular(20),
+                                                      bottomLeft:
+                                                          Radius.circular(20),
+                                                      bottomRight:
+                                                          Radius.circular(20),
+                                                    ),
+                                            ),
+                                            // margin:
+                                            //     const EdgeInsets.symmetric(
+                                            //         horizontal: 5,
+                                            //         vertical: 5),
+                                            child: Stack(children: [
+                                              Padding(
+                                                padding: const EdgeInsets.only(
+                                                    left: 10,
+                                                    right: 60,
+                                                    top: 5,
+                                                    bottom: 20),
+                                                child: Text(
+                                                  message["text"],
+                                                  style: TextStyle(
+                                                    fontSize: 15,
+                                                  ),
                                                 ),
-                                                fit: BoxFit.cover,
                                               ),
-                                            ),
-                                          if (message["attachment"] != null &&
-                                              message["attachment"]
-                                                      ["fileType"] ==
-                                                  "mp4")
-                                            VideoPlayerWidget(
-                                              videoUrl:
-                                                  "https://chatsocket.thesuitchstaging.com/sio/Uploads/${message["attachment"]["fileName"]}",
-                                            ),
-                                          if (message["attachment"] != null &&
-                                              message["attachment"]
-                                                      ["fileType"] ==
-                                                  "pdf")
-                                            Container(
-                                              height: 300,
-                                              width: 300,
-                                              child: const ShowPdf(
-                                                remotePDFURL:
-                                                    "https://assets.kpmg.com/content/dam/kpmg/pk/pdf/2022/06/Pakistan-Economic-Brief-2022.pdf",
-                                                //  "https://chatsocket.thesuitchstaging.com/sio/Uploads/${message["attachment"]["fileName"]}",
-                                              ),
-                                            ),
-                                          message["isSeen"] == true
-                                              ? IconButton(
-                                                  onPressed: () {},
-                                                  icon: const Icon(
-                                                    Icons.done_all_sharp,
-                                                    color: Colors.blue,
-                                                  ))
-                                              : IconButton(
-                                                  onPressed: () {},
-                                                  icon: const Icon(
-                                                    Icons.done_all_sharp,
-                                                  )),
-                                        ],
-                                      ),
+                                              if (message["attachment"] !=
+                                                      null &&
+                                                  message["attachment"]
+                                                          ["fileType"] ==
+                                                      "jpg")
+                                                Container(
+                                                  height: 250,
+                                                  width: 250,
+                                                  child: Image(
+                                                    image: NetworkImage(
+                                                      // thumbnailPath.toString(),
+                                                      "https://chatsocket.thesuitchstaging.com/sio/Uploads/${message["attachment"]["fileName"]}",
+                                                    ),
+                                                    fit: BoxFit.cover,
+                                                  ),
+                                                ),
+                                              if (message["attachment"] !=
+                                                      null &&
+                                                  message["attachment"]
+                                                          ["fileType"] ==
+                                                      "mp4")
+                                                VideoPlayerWidget(
+                                                  videoUrl:
+                                                      "https://chatsocket.thesuitchstaging.com/sio/Uploads/${message["attachment"]["fileName"]}",
+                                                ),
+                                              message["isSeen"] == true
+                                                  ? Positioned(
+                                                      bottom: 0,
+                                                      right: 8,
+                                                      child: Row(
+                                                        children: [
+                                                          Text(
+                                                            DateFormat.jm().format(
+                                                                DateTime.parse(
+                                                                        message[
+                                                                            "updatedAt"])
+                                                                    .add(const Duration(
+                                                                        hours:
+                                                                            5))),
+                                                            style:
+                                                                const TextStyle(
+                                                              fontSize: 10,
+                                                            ),
+                                                          ),
+                                                          const SizedBox(
+                                                            width: 5,
+                                                          ),
+                                                          GestureDetector(
+                                                            onTap: () {},
+                                                            child: const Icon(
+                                                              Icons
+                                                                  .done_all_sharp,
+                                                              size: 15,
+                                                              color:
+                                                                  Colors.blue,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ))
+                                                  : Positioned(
+                                                      bottom: 0,
+                                                      right: 8,
+                                                      child: Row(children: [
+                                                        Text(
+                                                          DateFormat.jm().format(
+                                                              DateTime.parse(
+                                                                      message[
+                                                                          "updatedAt"])
+                                                                  .add(const Duration(
+                                                                      hours:
+                                                                          5))),
+                                                          style:
+                                                              const TextStyle(
+                                                            fontSize: 10,
+                                                          ),
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 5,
+                                                        ),
+                                                        GestureDetector(
+                                                          onTap: () {},
+                                                          child: const Icon(
+                                                            Icons
+                                                                .done_all_sharp,
+                                                            size: 15,
+                                                          ),
+                                                        ),
+                                                      ]),
+                                                    ),
+                                            ]),
+                                          )),
+                                    )
+                                  : const Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        Text("Message has been deleted"),
+                                      ],
                                     ),
-                                  )
-                                : const Row(
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    children: [
-                                      Text("Message has been deleted"),
-                                    ],
-                                  ),
-                          ),
-                        ),
+                            )),
                       ),
                     ],
                   );
